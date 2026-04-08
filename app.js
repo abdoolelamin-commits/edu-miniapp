@@ -1,32 +1,34 @@
 const app = document.getElementById("app");
-app.innerHTML = "JS LOADED v3";
 const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.expand();
-  app.innerHTML += "<br>Telegram WebApp detected";
-} else {
-  app.innerHTML += "<br>Telegram WebApp NOT detected";
-}
+
+if (tg) tg.expand();
 
 const API_BASE = "https://privileged-marivel-chancefully.ngrok-free.dev";
 
 async function boot() {
   try {
-    app.innerHTML += "<br>Preparing request...";
+    app.innerHTML = `
+      <p>VERSION: v6</p>
+      <p>Preparing request...</p>
+    `;
 
     const initData = tg?.initData || "";
-    app.innerHTML += `<br>initData length: ${initData.length}`;
+    app.innerHTML += `<p>initData length: ${initData.length}</p>`;
 
     const resp = await fetch(`${API_BASE}/health`, {
-      method: "GET"
+      method: "GET",
+      headers: {
+        "ngrok-skip-browser-warning": "true"
+      }
     });
 
-    app.innerHTML += `<br>HTTP status: ${resp.status}`;
-
     const text = await resp.text();
-    app.innerHTML += `<br>Response: ${text}`;
+
+    app.innerHTML += `<p>Status: ${resp.status}</p>`;
+    app.innerHTML += `<pre>${text}</pre>`;
   } catch (err) {
-    app.innerHTML += `<br>ERROR: ${err.message}`;
+    app.innerHTML += `<p>ERROR: ${err.message}</p>`;
+    console.error(err);
   }
 }
 
