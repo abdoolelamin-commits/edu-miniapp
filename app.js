@@ -1,6 +1,5 @@
 const app = document.getElementById("app");
 app.innerHTML = "JS LOADED v3";
-
 const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.expand();
