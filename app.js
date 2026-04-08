@@ -1,51 +1,33 @@
-const tg = window.Telegram.WebApp;
-tg.expand();
+const app = document.getElementById("app");
+app.innerHTML = "JS LOADED v3";
+
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.expand();
+  app.innerHTML += "<br>Telegram WebApp detected";
+} else {
+  app.innerHTML += "<br>Telegram WebApp NOT detected";
+}
 
 const API_BASE = "https://privileged-marivel-chancefully.ngrok-free.dev";
 
 async function boot() {
-  const app = document.getElementById("app");
-
   try {
-    app.innerHTML = "<p>جارٍ التحقق...</p>";
+    app.innerHTML += "<br>Preparing request...";
 
-    const initData = tg.initData || "";
-    console.log("initData:", initData);
+    const initData = tg?.initData || "";
+    app.innerHTML += `<br>initData length: ${initData.length}`;
 
-    const resp = await fetch(`${API_BASE}/api/auth/telegram`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        init_data: initData
-      })
+    const resp = await fetch(`${API_BASE}/health`, {
+      method: "GET"
     });
 
+    app.innerHTML += `<br>HTTP status: ${resp.status}`;
+
     const text = await resp.text();
-    console.log("raw response:", text);
-
-    let data = {};
-    try {
-      data = JSON.parse(text);
-    } catch {
-      app.innerHTML = `<p>رد غير متوقع من السيرفر:</p><pre>${text}</pre>`;
-      return;
-    }
-
-    if (!resp.ok) {
-      app.innerHTML = `<p>فشل التحقق: ${data.detail || "خطأ غير معروف"}</p>`;
-      return;
-    }
-
-    app.innerHTML = `
-      <h3>مرحباً ${data.full_name || "طالب"}</h3>
-      <p>حالة الاشتراك: ${data.subscription_status || "غير معروف"}</p>
-      <p>القنوات المتاحة: ${(data.channels || []).join(" ، ") || "لا توجد"}</p>
-    `;
+    app.innerHTML += `<br>Response: ${text}`;
   } catch (err) {
-    console.error("fetch error:", err);
-    app.innerHTML = `<p>تعذر الاتصال بالسيرفر: ${err.message}</p>`;
+    app.innerHTML += `<br>ERROR: ${err.message}`;
   }
 }
 
