@@ -11,7 +11,7 @@ if (tg) {
   app.innerHTML += "<br>Telegram WebApp NOT detected";
 }
 
-const API_BASE = "https://privileged-marivel-chancefully.ngrok-free.dev";
+const API_BASE = "https://stuck-harold-may-beans.trycloudflare.com";
 
 async function boot() {
   try {
@@ -20,10 +20,7 @@ async function boot() {
     app.innerHTML += "<br>Calling /health ...";
 
     const resp = await fetch(`${API_BASE}/health`, {
-      method: "GET",
-      headers: {
-        "ngrok-skip-browser-warning": "true"
-      }
+      method: "GET"
     });
 
     const text = await resp.text();
