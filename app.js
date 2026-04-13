@@ -1,7 +1,7 @@
 const tg = window.Telegram?.WebApp;
 const app = document.getElementById("app");
 
-const API_BASE = "https://horizontal-possible-pending-seal.trycloudflare.com";
+const API_BASE = "https://workshops-washing-windsor-bibliographic.trycloudflare.com";
 
 if (tg) {
   tg.ready();
