@@ -9,6 +9,12 @@
 <body>
   <div style="padding:10px;color:red;font-weight:bold;">INDEX V22</div>
   <div id="app">جارٍ التحميل...</div>
-  <script src="app-v22.js"></script>
+  <script>
+  document.getElementById("app").insertAdjacentHTML(
+    "afterbegin",
+    '<div style="margin-bottom:10px;color:red;font-weight:bold;">INLINE JS OK V23</div>'
+  );
+</script>
+<script src="./app.js?v=23"></script>
 </body>
 </html>
