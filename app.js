@@ -11,15 +11,6 @@ const mode = params.get("mode") || "default";
 
 const app = document.getElementById("app");
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function renderRequestForm() {
   app.innerHTML = `
     <div style="padding:20px;font-family:sans-serif;direction:rtl;max-width:720px;margin:auto;">
@@ -64,12 +55,12 @@ function renderRequestForm() {
   `;
 
   loadChannels();
-
   document.getElementById("submitBtn").addEventListener("click", submitSubscriptionRequest);
 }
 
 async function loadChannels() {
   const select = document.getElementById("channel_code");
+
   try {
     const resp = await fetch(`${API_BASE}/api/channels`);
     const data = await resp.json();
@@ -85,10 +76,11 @@ async function loadChannels() {
     }
 
     select.innerHTML = data.channels
-      .map(c => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.title)}</option>`)
+      .map(c => `<option value="${c.code}">${c.title}</option>`)
       .join("");
   } catch (err) {
     select.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+    console.error("loadChannels error:", err);
   }
 }
 
