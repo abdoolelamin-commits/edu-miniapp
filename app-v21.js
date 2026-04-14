@@ -13,8 +13,9 @@ const app = document.getElementById("app");
 
 function renderRequestForm() {
   app.innerHTML = `
-    <div style="padding:20px;font-family:sans-serif;direction:rtl;max-width:720px;margin:auto;">
-      <h2>طلب اشتراك</h2>
+  <div style="padding:20px;font-family:sans-serif;direction:rtl;max-width:720px;margin:auto;">
+    <div style="margin-bottom:10px;color:#2563eb;font-weight:bold;">VERSION V21</div>
+    <h2>طلب اشتراك</h2>
       <p style="color:#666;line-height:1.8;">املأ البيانات التالية لإرسال طلب الاشتراك.</p>
 
       <div style="display:grid;gap:14px;">
