@@ -2,6 +2,7 @@ const tg = window.Telegram?.WebApp;
 const app = document.getElementById("app");
 
 const API_BASE = "https://tahiredu.duckdns.org";
+
 if (tg) {
   tg.ready();
   tg.expand();
