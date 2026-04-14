@@ -1,33 +1,15 @@
 const tg = window.Telegram?.WebApp;
 const API_BASE = "https://tahiredu.duckdns.org";
 
-const fullNameInput = document.getElementById("full_name");
-const whatsappInput = document.getElementById("whatsapp");
-const universityInput = document.getElementById("university");
-const channelSelect = document.getElementById("channel_code");
-const noteInput = document.getElementById("note");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-
 if (tg) {
   tg.ready();
   tg.expand();
 }
 
-function showStatus(message, type = "error") {
-  statusBox.className = `status ${type}`;
-  statusBox.textContent = message;
-}
+const params = new URLSearchParams(window.location.search);
+const mode = params.get("mode") || "default";
 
-function clearStatus() {
-  statusBox.className = "status";
-  statusBox.textContent = "";
-}
-
-function setLoading(loading) {
-  submitBtn.disabled = loading;
-  submitBtn.textContent = loading ? "جارٍ الإرسال..." : "إرسال الطلب";
-}
+const app = document.getElementById("app");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -38,72 +20,103 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function renderRequestForm() {
+  app.innerHTML = `
+    <div style="padding:20px;font-family:sans-serif;direction:rtl;max-width:720px;margin:auto;">
+      <h2>طلب اشتراك</h2>
+      <p style="color:#666;line-height:1.8;">املأ البيانات التالية لإرسال طلب الاشتراك.</p>
+
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label>الاسم الكامل</label>
+          <input id="full_name" type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;">
+        </div>
+
+        <div>
+          <label>رقم واتساب</label>
+          <input id="whatsapp" type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;">
+        </div>
+
+        <div>
+          <label>الجامعة</label>
+          <input id="university" type="text" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;">
+        </div>
+
+        <div>
+          <label>القناة المطلوبة</label>
+          <select id="channel_code" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;">
+            <option value="">جارٍ تحميل القنوات...</option>
+          </select>
+        </div>
+
+        <div>
+          <label>ملاحظة إضافية</label>
+          <textarea id="note" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;min-height:100px;"></textarea>
+        </div>
+
+        <button id="submitBtn" style="padding:14px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:bold;">
+          إرسال الطلب
+        </button>
+
+        <div id="statusBox" style="line-height:1.8;"></div>
+      </div>
+    </div>
+  `;
+
+  loadChannels();
+
+  document.getElementById("submitBtn").addEventListener("click", submitSubscriptionRequest);
+}
+
 async function loadChannels() {
+  const select = document.getElementById("channel_code");
   try {
-    const resp = await fetch(`${API_BASE}/api/channels`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const text = await resp.text();
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
-      return;
-    }
+    const resp = await fetch(`${API_BASE}/api/channels`);
+    const data = await resp.json();
 
     if (!resp.ok || !Array.isArray(data.channels)) {
-      channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+      select.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
       return;
     }
 
     if (data.channels.length === 0) {
-      channelSelect.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
+      select.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
       return;
     }
 
-    channelSelect.innerHTML = data.channels
-      .map(
-        (channel) =>
-          `<option value="${escapeHtml(channel.code)}">${escapeHtml(channel.title)}</option>`
-      )
+    select.innerHTML = data.channels
+      .map(c => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.title)}</option>`)
       .join("");
   } catch (err) {
-    channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+    select.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
   }
 }
 
-async function submitForm() {
-  clearStatus();
+async function submitSubscriptionRequest() {
+  const statusBox = document.getElementById("statusBox");
+  const full_name = document.getElementById("full_name").value.trim();
+  const whatsapp = document.getElementById("whatsapp").value.trim();
+  const university = document.getElementById("university").value.trim();
+  const channel_code = document.getElementById("channel_code").value.trim();
+  const note = document.getElementById("note").value.trim();
 
-  const full_name = fullNameInput.value.trim();
-  const whatsapp = whatsappInput.value.trim();
-  const university = universityInput.value.trim();
-  const channel_code = channelSelect.value.trim();
-  const note = noteInput.value.trim();
+  statusBox.textContent = "";
 
   if (!tg) {
-    showStatus("يجب فتح هذه الصفحة من داخل تيليجرام.");
+    statusBox.textContent = "يجب فتح هذه الصفحة من داخل تيليجرام.";
     return;
   }
 
   const initData = tg.initData || "";
   if (!initData) {
-    showStatus("تعذر التحقق من جلسة تيليجرام. افتح الطلب من زر البوت مباشرة.");
+    statusBox.textContent = "تعذر التحقق من جلسة تيليجرام.";
     return;
   }
 
   if (!full_name || !whatsapp || !university || !channel_code) {
-    showStatus("الرجاء تعبئة الاسم ورقم واتساب والجامعة واختيار القناة.");
+    statusBox.textContent = "الرجاء تعبئة الاسم والواتساب والجامعة واختيار القناة.";
     return;
   }
-
-  setLoading(true);
 
   try {
     const resp = await fetch(`${API_BASE}/api/subscription-request`, {
@@ -121,40 +134,34 @@ async function submitForm() {
       }),
     });
 
-    const text = await resp.text();
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      showStatus("رد غير متوقع من السيرفر.");
-      setLoading(false);
-      return;
-    }
+    const data = await resp.json();
 
     if (!resp.ok) {
-      showStatus(data.detail || "تعذر إرسال الطلب.");
-      setLoading(false);
+      statusBox.textContent = data.detail || "تعذر إرسال الطلب.";
       return;
     }
 
-    showStatus("✅ تم إرسال طلب الاشتراك بنجاح. ستقوم الإدارة بمراجعته ثم تفعيل اشتراكك.", "success");
-
-    fullNameInput.value = "";
-    whatsappInput.value = "";
-    universityInput.value = "";
-    noteInput.value = "";
-
-    if (tg?.HapticFeedback?.notificationOccurred) {
-      tg.HapticFeedback.notificationOccurred("success");
-    }
+    statusBox.textContent = "✅ تم إرسال طلب الاشتراك بنجاح.";
+    document.getElementById("full_name").value = "";
+    document.getElementById("whatsapp").value = "";
+    document.getElementById("university").value = "";
+    document.getElementById("note").value = "";
   } catch (err) {
-    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
-  } finally {
-    setLoading(false);
+    statusBox.textContent = `تعذر الاتصال بالسيرفر: ${err.message}`;
   }
 }
 
-submitBtn.addEventListener("click", submitForm);
+function renderDefaultPage() {
+  app.innerHTML = `
+    <div style="padding:20px;font-family:sans-serif;direction:rtl;">
+      <h2>منصة الدروس</h2>
+      <p>اختر ما تريد من البوت.</p>
+    </div>
+  `;
+}
 
-loadChannels();
+if (mode === "request") {
+  renderRequestForm();
+} else {
+  renderDefaultPage();
+}
