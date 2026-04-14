@@ -1,3 +1,5 @@
+const app = document.getElementById("app");
+app.innerHTML = "APP JS V22 LOADED";
 const tg = window.Telegram?.WebApp;
 const API_BASE = "https://tahiredu.duckdns.org";
 
