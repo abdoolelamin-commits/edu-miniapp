@@ -61,26 +61,42 @@ function renderRequestForm() {
 
 async function loadChannels() {
   const select = document.getElementById("channel_code");
+  const statusBox = document.getElementById("statusBox");
 
   try {
+    statusBox.textContent = "جارٍ جلب القنوات...";
     const resp = await fetch(`${API_BASE}/api/channels`);
-    const data = await resp.json();
+    const text = await resp.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      select.innerHTML = `<option value="">رد غير متوقع من السيرفر</option>`;
+      statusBox.textContent = text;
+      return;
+    }
 
     if (!resp.ok || !Array.isArray(data.channels)) {
       select.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+      statusBox.textContent = data.detail || "فشل تحميل القنوات";
       return;
     }
 
     if (data.channels.length === 0) {
       select.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
+      statusBox.textContent = "";
       return;
     }
 
     select.innerHTML = data.channels
       .map(c => `<option value="${c.code}">${c.title}</option>`)
       .join("");
+
+    statusBox.textContent = "✅ تم تحميل القنوات";
   } catch (err) {
     select.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+    statusBox.textContent = `خطأ: ${err.message}`;
     console.error("loadChannels error:", err);
   }
 }
