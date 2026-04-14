@@ -1,8 +1,5 @@
 
-console.log("APP JS FILE LOADED V23");
-const app = document.getElementById("app");
-app.insertAdjacentHTML("beforeend", '<div style="color:green;font-weight:bold;">APP JS LOADED V23</div>');const app = document.getElementById("app");
-app.innerHTML = "APP JS V22 LOADED";
+
 const tg = window.Telegram?.WebApp;
 const API_BASE = "https://tahiredu.duckdns.org";
 
