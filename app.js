@@ -1,11 +1,32 @@
 const tg = window.Telegram?.WebApp;
-const app = document.getElementById("app");
-
 const API_BASE = "https://tahiredu.duckdns.org";
+
+const fullNameInput = document.getElementById("full_name");
+const whatsappInput = document.getElementById("whatsapp");
+const universityInput = document.getElementById("university");
+const channelSelect = document.getElementById("channel_code");
+const noteInput = document.getElementById("note");
+const submitBtn = document.getElementById("submitBtn");
+const statusBox = document.getElementById("statusBox");
 
 if (tg) {
   tg.ready();
   tg.expand();
+}
+
+function showStatus(message, type = "error") {
+  statusBox.className = `status ${type}`;
+  statusBox.textContent = message;
+}
+
+function clearStatus() {
+  statusBox.className = "status";
+  statusBox.textContent = "";
+}
+
+function setLoading(loading) {
+  submitBtn.disabled = loading;
+  submitBtn.textContent = loading ? "جارٍ الإرسال..." : "إرسال الطلب";
 }
 
 function escapeHtml(value) {
@@ -17,74 +38,86 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function renderLoading() {
-  app.innerHTML = `
-    <div style="padding:20px;font-family:sans-serif;direction:rtl">
-      <h3>منصة الدروس</h3>
-      <p>جارٍ تحميل بياناتك...</p>
-    </div>
-  `;
+async function loadChannels() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/channels`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const text = await resp.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+      return;
+    }
+
+    if (!resp.ok || !Array.isArray(data.channels)) {
+      channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+      return;
+    }
+
+    if (data.channels.length === 0) {
+      channelSelect.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
+      return;
+    }
+
+    channelSelect.innerHTML = data.channels
+      .map(
+        (channel) =>
+          `<option value="${escapeHtml(channel.code)}">${escapeHtml(channel.title)}</option>`
+      )
+      .join("");
+  } catch (err) {
+    channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
+  }
 }
 
-function renderError(message) {
-  app.innerHTML = `
-    <div style="padding:20px;font-family:sans-serif;direction:rtl">
-      <h3>منصة الدروس</h3>
-      <p style="color:#b00020;">${escapeHtml(message)}</p>
-    </div>
-  `;
-}
+async function submitForm() {
+  clearStatus();
 
-function renderStudent(data) {
-  const channels = Array.isArray(data.channels) ? data.channels : [];
-  const channelsHtml = channels.length
-    ? `<ul>${channels.map((c) => `<li>${escapeHtml(c)}</li>`).join("")}</ul>`
-    : `<p>لا توجد قنوات مرتبطة بحسابك حاليًا.</p>`;
+  const full_name = fullNameInput.value.trim();
+  const whatsapp = whatsappInput.value.trim();
+  const university = universityInput.value.trim();
+  const channel_code = channelSelect.value.trim();
+  const note = noteInput.value.trim();
 
-  const statusText =
-    data.subscription_status === "active" ? "✅ اشتراكك فعال" : "❌ لا يوجد اشتراك فعال";
+  if (!tg) {
+    showStatus("يجب فتح هذه الصفحة من داخل تيليجرام.");
+    return;
+  }
 
-  app.innerHTML = `
-    <div style="padding:20px;font-family:sans-serif;direction:rtl;line-height:1.8">
-      <h2 style="margin-top:0;">منصة الدروس</h2>
+  const initData = tg.initData || "";
+  if (!initData) {
+    showStatus("تعذر التحقق من جلسة تيليجرام. افتح الطلب من زر البوت مباشرة.");
+    return;
+  }
 
-      <div style="padding:14px;border:1px solid #ddd;border-radius:12px;margin-bottom:16px;">
-        <div><strong>الاسم:</strong> ${escapeHtml(data.full_name || "طالب")}</div>
-        <div><strong>اسم المستخدم:</strong> ${escapeHtml(data.username || "-")}</div>
-        <div><strong>Telegram ID:</strong> ${escapeHtml(data.telegram_id || "-")}</div>
-        <div><strong>الحالة:</strong> ${statusText}</div>
-      </div>
+  if (!full_name || !whatsapp || !university || !channel_code) {
+    showStatus("الرجاء تعبئة الاسم ورقم واتساب والجامعة واختيار القناة.");
+    return;
+  }
 
-      <div style="padding:14px;border:1px solid #ddd;border-radius:12px;">
-        <h3 style="margin-top:0;">القنوات المتاحة</h3>
-        ${channelsHtml}
-      </div>
-    </div>
-  `;
-}
-
-async function boot() {
-  renderLoading();
+  setLoading(true);
 
   try {
-    if (!tg) {
-      renderError("يجب فتح المنصة من داخل تيليجرام.");
-      return;
-    }
-
-    const initData = tg.initData || "";
-    if (!initData) {
-      renderError("تعذر التحقق من جلسة تيليجرام. افتح المنصة من زر البوت مباشرة.");
-      return;
-    }
-
-    const resp = await fetch(`${API_BASE}/api/auth/telegram`, {
+    const resp = await fetch(`${API_BASE}/api/subscription-request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         init_data: initData,
+        full_name,
+        whatsapp,
+        university,
+        channel_code,
+        note,
       }),
     });
 
@@ -94,19 +127,34 @@ async function boot() {
     try {
       data = JSON.parse(text);
     } catch {
-      renderError("رد غير متوقع من السيرفر.");
+      showStatus("رد غير متوقع من السيرفر.");
+      setLoading(false);
       return;
     }
 
     if (!resp.ok) {
-      renderError(data.detail || "تعذر تحميل بياناتك.");
+      showStatus(data.detail || "تعذر إرسال الطلب.");
+      setLoading(false);
       return;
     }
 
-    renderStudent(data);
+    showStatus("✅ تم إرسال طلب الاشتراك بنجاح. ستقوم الإدارة بمراجعته ثم تفعيل اشتراكك.", "success");
+
+    fullNameInput.value = "";
+    whatsappInput.value = "";
+    universityInput.value = "";
+    noteInput.value = "";
+
+    if (tg?.HapticFeedback?.notificationOccurred) {
+      tg.HapticFeedback.notificationOccurred("success");
+    }
   } catch (err) {
-    renderError(`تعذر الاتصال بالسيرفر: ${err.message}`);
+    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
+  } finally {
+    setLoading(false);
   }
 }
 
-boot();
+submitBtn.addEventListener("click", submitForm);
+
+loadChannels();
