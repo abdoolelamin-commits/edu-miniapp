@@ -5,10 +5,222 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <title>طلب اشتراك</title>
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --primary: #2563eb;
+      --danger: #b91c1c;
+      --success: #166534;
+      --radius: 16px;
+      --shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 22px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.4;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .form {
+      padding: 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      margin-top: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn[disabled] {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 14px;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.8;
+      display: none;
+    }
+
+    .status.error {
+      display: block;
+      background: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    .status.success {
+      display: block;
+      background: #f0fdf4;
+      color: var(--success);
+      border: 1px solid #bbf7d0;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    @media (min-width: 700px) {
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div style="padding:10px;color:red;font-weight:bold;">INDEX V24</div>
-  <div id="app">جارٍ التحميل...</div>
-  <script src="./app-v24.js"></script>
+  <div class="wrap">
+    <div class="card">
+      <div class="hero">
+        <h1>طلب اشتراك</h1>
+        <p>
+          املأ البيانات التالية لإرسال طلب الاشتراك. بعد مراجعة الإدارة والتأكد من الرسوم،
+          سيتم تفعيل اشتراكك وإرسال الرابط الخاص بك.
+        </p>
+      </div>
+
+      <div class="form">
+        <div class="grid two">
+          <div class="field">
+            <label for="full_name">الاسم الكامل</label>
+            <input id="full_name" type="text" placeholder="اكتب اسمك الكامل" />
+          </div>
+
+          <div class="field">
+            <label for="whatsapp">رقم واتساب</label>
+            <input id="whatsapp" type="text" inputmode="tel" placeholder="مثال: 2499XXXXXXXX" />
+            <div class="hint">اكتب الرقم بصيغة واضحة مع المفتاح إن أمكن.</div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="field">
+            <label for="university">الجامعة</label>
+            <input id="university" type="text" placeholder="مثال: جامعة عطبرة" />
+          </div>
+
+          <div class="field">
+            <label for="channel_code">القناة المطلوبة</label>
+            <select id="channel_code">
+              <option value="">جارٍ تحميل القنوات...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="note">ملاحظة إضافية</label>
+          <textarea id="note" placeholder="أي ملاحظة إضافية، أو اكتب وسيلة الدفع أو اسم المحوّل إن أحببت"></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="submitBtn" class="btn btn-primary" type="button">إرسال الطلب</button>
+        </div>
+
+        <div id="statusBox" class="status"></div>
+
+        <div class="footer-note">
+          إذا كنت قد دفعت الرسوم بالفعل، اكتب ذلك في خانة الملاحظة لسهولة المراجعة.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app-v25.js"></script>
 </body>
 </html>
