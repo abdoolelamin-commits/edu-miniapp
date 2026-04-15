@@ -1,3 +1,28 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from api.routes.auth import router as auth_router
+from api.routes.channels import router as channels_router
+from api.routes.subscription_request import router as subscription_request_router
+
+app = FastAPI(title="Edu Platform API", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router, prefix="/api")
+app.include_router(channels_router, prefix="/api")
+app.include_router(subscription_request_router, prefix="/api")
+
+
+@app.get("/health")
+async def health():
+    return {"ok": True}
 const tg = window.Telegram?.WebApp;
 const API_BASE = "https://tahiredu.duckdns.org";
 
