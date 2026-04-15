@@ -1,56 +1,131 @@
-const app = document.getElementById("app");
 const tg = window.Telegram?.WebApp;
 const API_BASE = "https://tahiredu.duckdns.org";
 
-app.innerHTML = `
-  <div style="padding:10px;color:green;font-weight:bold;">APP V30 LOADED</div>
-  <div>جارٍ تحميل القنوات...</div>
-  <select id="channel_code">
-    <option value="">جارٍ تحميل القنوات...</option>
-  </select>
-  <div id="statusBox" style="margin-top:10px;"></div>
-`;
+const fullNameInput = document.getElementById("full_name");
+const whatsappInput = document.getElementById("whatsapp");
+const universityInput = document.getElementById("university");
+const channelSelect = document.getElementById("channel_code");
+const noteInput = document.getElementById("note");
+const submitBtn = document.getElementById("submitBtn");
+const statusBox = document.getElementById("statusBox");
 
 if (tg) {
   tg.ready();
   tg.expand();
 }
 
-const channelSelect = document.getElementById("channel_code");
-const statusBox = document.getElementById("statusBox");
+function showStatus(message, type = "error") {
+  statusBox.className = `status ${type}`;
+  statusBox.textContent = message;
+}
+
+function clearStatus() {
+  statusBox.className = "status";
+  statusBox.textContent = "";
+}
+
+function setLoading(loading) {
+  submitBtn.disabled = loading;
+  submitBtn.textContent = loading ? "جارٍ الإرسال..." : "إرسال الطلب";
+}
 
 async function loadChannels() {
   try {
-    statusBox.textContent = "بدء طلب القنوات...";
+    showStatus("جارٍ تحميل القنوات...", "success");
+
     const resp = await fetch(`${API_BASE}/api/channels`, {
       method: "GET",
       cache: "no-store",
     });
 
-    statusBox.textContent = `HTTP ${resp.status}`;
     const data = await resp.json();
 
     if (!resp.ok || !Array.isArray(data.channels)) {
       channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
-      statusBox.textContent = "فشل تحميل القنوات";
+      showStatus("تعذر تحميل القنوات من السيرفر.");
       return;
     }
 
     if (data.channels.length === 0) {
-      channelSelect.innerHTML = `<option value="">لا توجد قنوات</option>`;
-      statusBox.textContent = "لا توجد قنوات";
+      channelSelect.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
+      showStatus("لا توجد قنوات متاحة حاليًا.");
       return;
     }
 
     channelSelect.innerHTML = data.channels
-      .map(c => `<option value="${c.code}">${c.title}</option>`)
+      .map((channel) => `<option value="${channel.code}">${channel.title}</option>`)
       .join("");
 
-    statusBox.textContent = `تم تحميل ${data.channels.length} قناة`;
+    showStatus(`✅ تم تحميل ${data.channels.length} قناة`, "success");
   } catch (err) {
     channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
-    statusBox.textContent = `خطأ: ${err.message}`;
+    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
   }
 }
 
+async function submitForm() {
+  clearStatus();
+
+  const full_name = fullNameInput.value.trim();
+  const whatsapp = whatsappInput.value.trim();
+  const university = universityInput.value.trim();
+  const channel_code = channelSelect.value.trim();
+  const note = noteInput.value.trim();
+
+  if (!tg) {
+    showStatus("يجب فتح هذه الصفحة من داخل تيليجرام.");
+    return;
+  }
+
+  const initData = tg.initData || "";
+  if (!initData) {
+    showStatus("تعذر التحقق من جلسة تيليجرام. افتح الطلب من زر البوت مباشرة.");
+    return;
+  }
+
+  if (!full_name || !whatsapp || !university || !channel_code) {
+    showStatus("الرجاء تعبئة الاسم ورقم واتساب والجامعة واختيار القناة.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/subscription-request`, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        init_data: initData,
+        full_name,
+        whatsapp,
+        university,
+        channel_code,
+        note,
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showStatus(data.detail || "تعذر إرسال الطلب.");
+      return;
+    }
+
+    showStatus("✅ تم إرسال طلب الاشتراك بنجاح. ستقوم الإدارة بمراجعته.", "success");
+
+    fullNameInput.value = "";
+    whatsappInput.value = "";
+    universityInput.value = "";
+    noteInput.value = "";
+  } catch (err) {
+    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+}
+
+submitBtn.addEventListener("click", submitForm);
 loadChannels();
