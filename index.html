@@ -1,131 +1,226 @@
-const tg = window.Telegram?.WebApp;
-const API_BASE = "https://tahiredu.duckdns.org";
-
-const fullNameInput = document.getElementById("full_name");
-const whatsappInput = document.getElementById("whatsapp");
-const universityInput = document.getElementById("university");
-const channelSelect = document.getElementById("channel_code");
-const noteInput = document.getElementById("note");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-
-if (tg) {
-  tg.ready();
-  tg.expand();
-}
-
-function showStatus(message, type = "error") {
-  statusBox.className = `status ${type}`;
-  statusBox.textContent = message;
-}
-
-function clearStatus() {
-  statusBox.className = "status";
-  statusBox.textContent = "";
-}
-
-function setLoading(loading) {
-  submitBtn.disabled = loading;
-  submitBtn.textContent = loading ? "جارٍ الإرسال..." : "إرسال الطلب";
-}
-
-async function loadChannels() {
-  try {
-    showStatus("جارٍ تحميل القنوات...", "success");
-
-    const resp = await fetch(`${API_BASE}/api/channels`, {
-      method: "GET",
-      cache: "no-store",
-    });
-
-    const data = await resp.json();
-
-    if (!resp.ok || !Array.isArray(data.channels)) {
-      channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
-      showStatus("تعذر تحميل القنوات من السيرفر.");
-      return;
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>طلب اشتراك</title>
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --primary: #2563eb;
+      --danger: #b91c1c;
+      --success: #166534;
+      --radius: 16px;
+      --shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
     }
 
-    if (data.channels.length === 0) {
-      channelSelect.innerHTML = `<option value="">لا توجد قنوات متاحة حاليًا</option>`;
-      showStatus("لا توجد قنوات متاحة حاليًا.");
-      return;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
 
-    channelSelect.innerHTML = data.channels
-      .map((channel) => `<option value="${channel.code}">${channel.title}</option>`)
-      .join("");
-
-    showStatus(`✅ تم تحميل ${data.channels.length} قناة`, "success");
-  } catch (err) {
-    channelSelect.innerHTML = `<option value="">تعذر تحميل القنوات</option>`;
-    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
-  }
-}
-
-async function submitForm() {
-  clearStatus();
-
-  const full_name = fullNameInput.value.trim();
-  const whatsapp = whatsappInput.value.trim();
-  const university = universityInput.value.trim();
-  const channel_code = channelSelect.value.trim();
-  const note = noteInput.value.trim();
-
-  if (!tg) {
-    showStatus("يجب فتح هذه الصفحة من داخل تيليجرام.");
-    return;
-  }
-
-  const initData = tg.initData || "";
-  if (!initData) {
-    showStatus("تعذر التحقق من جلسة تيليجرام. افتح الطلب من زر البوت مباشرة.");
-    return;
-  }
-
-  if (!full_name || !whatsapp || !university || !channel_code) {
-    showStatus("الرجاء تعبئة الاسم ورقم واتساب والجامعة واختيار القناة.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const resp = await fetch(`${API_BASE}/api/subscription-request`, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        init_data: initData,
-        full_name,
-        whatsapp,
-        university,
-        channel_code,
-        note,
-      }),
-    });
-
-    const data = await resp.json();
-
-    if (!resp.ok) {
-      showStatus(data.detail || "تعذر إرسال الطلب.");
-      return;
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
     }
 
-    showStatus("✅ تم إرسال طلب الاشتراك بنجاح. ستقوم الإدارة بمراجعته.", "success");
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
 
-    fullNameInput.value = "";
-    whatsappInput.value = "";
-    universityInput.value = "";
-    noteInput.value = "";
-  } catch (err) {
-    showStatus(`تعذر الاتصال بالسيرفر: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-}
+    .hero {
+      padding: 22px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    }
 
-submitBtn.addEventListener("click", submitForm);
-loadChannels();
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.4;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .form {
+      padding: 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      margin-top: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn[disabled] {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 14px;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.8;
+      display: none;
+    }
+
+    .status.error {
+      display: block;
+      background: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    .status.success {
+      display: block;
+      background: #f0fdf4;
+      color: var(--success);
+      border: 1px solid #bbf7d0;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    @media (min-width: 700px) {
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="hero">
+        <h1>طلب اشتراك</h1>
+        <p>
+          املأ البيانات التالية لإرسال طلب الاشتراك. بعد مراجعة الإدارة والتأكد من الرسوم،
+          سيتم تفعيل اشتراكك وإرسال الرابط الخاص بك.
+        </p>
+      </div>
+
+      <div class="form">
+        <div class="grid two">
+          <div class="field">
+            <label for="full_name">الاسم الكامل</label>
+            <input id="full_name" type="text" placeholder="اكتب اسمك الكامل" />
+          </div>
+
+          <div class="field">
+            <label for="whatsapp">رقم واتساب</label>
+            <input id="whatsapp" type="text" inputmode="tel" placeholder="مثال: 2499XXXXXXXX" />
+            <div class="hint">اكتب الرقم بصيغة واضحة مع المفتاح إن أمكن.</div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="field">
+            <label for="university">الجامعة</label>
+            <input id="university" type="text" placeholder="مثال: جامعة عطبرة" />
+          </div>
+
+          <div class="field">
+            <label for="channel_code">القناة المطلوبة</label>
+            <select id="channel_code">
+              <option value="">جارٍ تحميل القنوات...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="note">ملاحظة إضافية</label>
+          <textarea id="note" placeholder="أي ملاحظة إضافية، أو اكتب وسيلة الدفع أو اسم المحوّل إن أحببت"></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="submitBtn" class="btn btn-primary" type="button">إرسال الطلب</button>
+        </div>
+
+        <div id="statusBox" class="status"></div>
+
+        <div class="footer-note">
+          إذا كنت قد دفعت الرسوم بالفعل، اكتب ذلك في خانة الملاحظة لسهولة المراجعة.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js?v=31"></script>
+</body>
+</html>
